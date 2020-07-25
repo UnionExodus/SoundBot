@@ -4,26 +4,33 @@ const fs = require('fs')
 
 var bot = new Discord.Client()
 
+/* -------------- Functions: -------------- */
+function LoadLogin() {
+  if (config.token == '') bot.login(require("../token.json").token); 
+    else bot.login(config.token) }
+
+var playFile = function playFile(sound, channelid) {
+  bot.voice.connections.find(c => c.channel.id == String(channelid)).play("./Sounds/" + loadedSounds[sound] + ".mp3") }
+
+
+/* -------------- Events: -------------- */
 bot.on("ready", async function() {
   console.log("Bot launched. Running Version: "+ config.version)
 
   fs.readdir('./Sounds', (err, files) => { 
-    if(err)console.log('error: '+ err )
+    if(err) console.log('error: ' + err)
+
     loadedSounds = files.filter(f => f.split('.').pop() === 'mp3')
     loadedSounds.forEach((e, i) => {
       loadedSounds[i] = e.replace(".mp3", "") })
 
     module.exports.loadedSounds = loadedSounds
     console.log(loadedSounds.length + ' Sound(s) loaded.')
-   })
 
-  // if (config.usewebserver) require("./webserver.js") //Webserver is enabled? Run it.
+    if (config.usewebserver) require("./webserver.js").run(loadedSounds, playFile) //Webserver is enabled? Run it.
+   })
 })
 
-function LoadLogin() {
-  if (config.token == '') bot.login(require("../token.json").token); 
-    else bot.login(config.token);
-}
 
 bot.on('message', async function(message) {
   if (message.author.bot) return;
@@ -82,7 +89,13 @@ bot.on('message', async function(message) {
       message.channel.send('Playing Sound: ' + args[2])
       message.member.guild.voice.connection.play('./Sounds/'+ args[2]+'.mp3') }
     else message.channel.send('Please use //sound play [title], \nsend a mp3 with the Comment "//sound dplay" or \nadd a Sound to the Folder')
+    break;
+
   }
 });
+
+module.exports={
+  playFile
+}
 
 LoadLogin();
