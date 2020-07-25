@@ -17,11 +17,11 @@ bot.on("ready", async function() {
     console.log(loadedSounds.length + ' Sound(s) loaded.')
    })
 
-   if (config.usewebserver) require("./webserver.js") //Webserver is enabled? Run it.
+  // if (config.usewebserver) require("./webserver.js") //Webserver is enabled? Run it.
 })
 
 function LoadLogin() {
-  if (config.useToken == false) bot.login(require("../token.json").token); 
+  if (config.token == '') bot.login(require("../token.json").token); 
     else bot.login(config.token);
 }
 
