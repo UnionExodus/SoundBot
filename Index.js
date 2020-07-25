@@ -11,6 +11,9 @@ bot.on("ready", async function() {
   fs.readdir('./Sounds', (err, files) => { 
     if(err)console.log('error: '+ err )
     loadedSounds = files.filter(f => f.split('.').pop() === 'mp3')
+    loadedSounds.forEach((e, i) => {
+      loadedSounds[i] = e.replace(".mp3", "");
+    })
     console.log(loadedSounds.length + ' Sound(s) loaded.')
    })
 })
@@ -40,7 +43,7 @@ bot.on('message', async function(message) {
     LoadLogin();
     break;
   case 'help':
-    message.channel.send('No help today.')
+    message.channel.send('Bot-Commands:\n//ping\n//stop\n//restart (This Command doesn´t load new Content)\n//join\n//leave\n//sound (Type sound for more help))')
     break;
   case 'join':
     if (message.member.voice.channel == null) { //Check if the user is in a voice channel
@@ -61,11 +64,13 @@ bot.on('message', async function(message) {
     message.guild.voice.connection.disconnect()
     break;
   case 'sound': 
-      if(args[1] === 'add') message.channel.send('Adding Sound to the Board')
-      else if(args[1] === 'list')  message.channel.send(loadedSounds)
-      else if(args[1] === 'play') {message.channel.send('Playing Sound' + '...')   //HIER NOCH SOUNDDISPLAY
-                                   message.member.guild.voice.connection.play('./SadViolin.mp3')} //wie spielt man einen Ton ab?
-      else message.channel.send('Please use //sound [play/add] [title] or NameYourSoundWithoutSpace')
+      //if(args[1] === 'add') {message.channel.send('Adding Sound to the Board')}
+      if(args[1] === 'list')   message.channel.send(loadedSounds) //else if
+      else if(args[1] === 'dplay') {message.channel.send('Playing Sound')
+                                    message.member.guild.voice.connection.play(message.attachments.array()[0]["attachment"])}
+      else if(args[1] === 'play')  {message.channel.send('Playing Sound: ' + args[2])   
+                                    message.member.guild.voice.connection.play('./Sounds/'+ args[2]+'.mp3')}
+      else message.channel.send('Please use //sound play [title], \nsend a mp3 with the Comment "//sound dplay" or \nadd a Sound to the Folder')
 
    
   }
