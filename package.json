@@ -9,6 +9,8 @@
   "author": "UnionExodus",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^12.2.0"
+    "discord.js": "^12.2.0",
+    "ffmpeg": "0.0.4",
+    "opusscript": "0.0.7"
   }
 }

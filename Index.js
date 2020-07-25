@@ -7,6 +7,12 @@ var bot = new Discord.Client()
 
 bot.on("ready", async function() {
   console.log("Bot launched. Running Version: "+ config.version)
+
+  fs.readdir('./Sounds', (err, files) => { 
+    if(err)console.log('error: '+ err )
+    loadedSounds = files.filter(f => f.split('.').pop() === 'mp3')
+    console.log(loadedSounds.length + ' Sound(s) loaded.')
+   })
 })
 function LoadLogin() {
   if (config.useToken === 'false') bot.login(tokenpath.token); 
@@ -14,7 +20,6 @@ function LoadLogin() {
 }
 
 bot.on('message', async function(message) {
-  console.log(message.content);
   if (message.author.bot) return;
   if (!message.content.startsWith(config.prefix)) return;
   var args = message.content.substring(config.prefix.length).split(/\s+/);
@@ -34,8 +39,13 @@ bot.on('message', async function(message) {
     bot.destroy();
     LoadLogin();
     break;
-
+  case 'help':
+    message.channel.send('No help today.')
+    break;
   case 'join':
+    if (message.member.voice.channel == null) { //Check if the user is in a voice channel
+      message.channel.send("Please join a voice channel first!")
+      return; }
     if(message.member.voice.channel == null) {
       message.channel.send('please join a Channel first!')
     return; }
@@ -45,19 +55,19 @@ bot.on('message', async function(message) {
     break;
 
   case 'leave':
+    if(!bot.guilds.cache.get(message.guild.id).voice || bot.guilds.cache.get(message.guild.id).voice.channelID == null) return message.channel.send('I am not connected to any voice channel!\nIf I am still in a voice channel please wait or disconnect me manually.')
     console.log(`Left ${message.guild.voice.connection.channel.name}.`)
     message.channel.send("Left `" + message.guild.voice.connection.channel.name + "`.")
     message.guild.voice.connection.disconnect()
     break;
   case 'sound': 
-  fs.readdir('./Sounds', () => {
       if(args[1] === 'add') message.channel.send('Adding Sound to the Board')
-
+      else if(args[1] === 'list')  message.channel.send(loadedSounds)
       else if(args[1] === 'play') {message.channel.send('Playing Sound' + '...')   //HIER NOCH SOUNDDISPLAY
-                                   message.guild.voice.connection.play('./run.mp3')} //wie spielt man einen Ton ab?
+                                   message.member.guild.voice.connection.play('./SadViolin.mp3')} //wie spielt man einen Ton ab?
       else message.channel.send('Please use //sound [play/add] [title] or NameYourSoundWithoutSpace')
 
-    })
+   
   }
 });
 
