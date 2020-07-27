@@ -9,8 +9,8 @@ function LoadLogin() {
   if (config.token == '') bot.login(require("../token.json").token); 
     else bot.login(config.token) }
 
-var playFile = function playFile(sound, channelid) {
-  bot.voice.connections.find(c => c.channel.id == String(channelid)).play("./Sounds/" + loadedSounds[sound] + ".mp3") }
+var playFile = function playFile(sound, channelid) { //exported function that allows to play a sound from other files (webserver)
+  bot.voice.connections.find(c => c.channel.id == String(channelid)).play("./Sounds/" + loadedSounds[sound] + ".mp3") } //find the channelid's corresponding voice connection
 
 
 /* -------------- Events: -------------- */
