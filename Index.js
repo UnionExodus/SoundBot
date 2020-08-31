@@ -11,16 +11,28 @@ function LoadLogin() {
     else bot.login(config.token) }
 
 var playFile = function playFile(sound, channelid) { //exported function that allows to play a sound from other files (webserver)
-  if(bot.voice.connections.find(c => c.channel.id == String(channelid)) == undefined) bot.voice.joinChannel(bot.channels.cache.get(String(channelid)));
-     bot.voice.connections.find(c => c.channel.id == String(channelid)).play("./Sounds/" + loadedSounds[sound] + ".mp3");  } //find the channelid's corresponding voice connection
+  if (bot.voice.connections.find(c => c.channel.id == String(channelid)) == undefined) bot.voice.joinChannel(bot.channels.cache.get(String(channelid)));
+
+  bot.voice.connections.find(c => c.channel.id == String(channelid)).play("./Sounds/" + loadedSounds[sound] + ".mp3"); } //find the channelid's corresponding voice connection
   
 
 
 /* -------------- Events: -------------- */
 bot.on("ready", async function() {
-  console.log("Bot launched. Running Version: "+ config.version)
+  console.log("\nSoundBot launched. Running Version: "+ config.version)
 
-  fs.readdir('./Sounds', (err, files) => { 
+  //set it once at startup, then let the Interval do it
+  bot.user.setPresence({activity: { name: config.games[0] }, status: 'online' }).catch(err => { return console.log("Woops! Couldn't set presence: " + err); })
+
+  currentgameindex = 1
+  var gamerotationloop = setInterval(() => { //interval has a name to be able to clear it (for what ever reason): clearInterval(gamerotationloop)
+    bot.user.setPresence({activity: { name: config.games[currentgameindex] }, status: 'online' }).catch(err => { return console.log("Woops! Couldn't set presence: " + err); })
+
+    currentgameindex++
+    if (currentgameindex == config.games.length) currentgameindex = 0
+  }, config.gamerotateseconds * 1000)
+
+  fs.readdir('./Sounds', (err, files) => {
     if(err) console.log('error: ' + err)
 
     loadedSounds = files.filter(f => f.split('.').pop() === 'mp3')
@@ -30,8 +42,10 @@ bot.on("ready", async function() {
     module.exports.loadedSounds = loadedSounds
     console.log(loadedSounds.length + ' Sound(s) loaded.')
 
-    if (config.usewebserver) require("./webserver.js").run(loadedSounds, playFile) //Webserver is enabled? Run it.
+    if (config.usewebserver) require("./webserver.js").run(bot, loadedSounds, playFile) //Webserver is enabled? Run it.
    })
+
+  setTimeout(() => { console.log("") }, 500)
 })
 
 
@@ -64,7 +78,7 @@ bot.on('message', async function(message) {
     break; */
 
   case 'help':
-    message.channel.send('Bot-Commands:\n//ping\n//stop\n//join\n//leave\n//sound (Type sound for more help))') ////restart (This Command doesn´t load new Content)\n
+    message.channel.send(`Bot-Commands:\n${config.prefix}ping\n${config.prefix}stop\n${config.prefix}join\n${config.prefix}leave\n${config.prefix}sound (Type sound for more help)\n${config.prefix}restart (This Command doesn't load new Content`)
     break;
 
   case 'join':
@@ -73,7 +87,7 @@ bot.on('message', async function(message) {
     return; }
 
     message.member.voice.channel.join();
-    console.log(`Joined ${message.member.voice.channel.name}.`)
+    console.log(`Joined ${message.member.voice.channel.name} (${message.member.voice.channel.id}).`)
     message.channel.send("Joined `" + message.member.voice.channel.name + "`.")
     break;
 
@@ -124,6 +138,28 @@ bot.on('message', async function(message) {
     else message.channel.send('Please use //sound [play/delete/list] [title], \nsend a mp3 with the Comment "//sound dplay" or \nadd a Sound to the Folder')
     break;
 
+  case "eval":
+    if (!config.owners.includes(message.author.id)) return message.channel.send("You have no permission to use this command.");
+  
+    const clean = text => {
+      if (typeof(text) === "string") return text.replace(/`/g, "`" + String.fromCharCode(8203)).replace(/@/g, "@" + String.fromCharCode(8203));
+          else return text; }
+    
+    try {
+        args.shift() //remove command name
+        const code = args.join(" ");
+        let evaled = eval(code);
+
+        if (typeof evaled !== "string")
+        evaled = require("util").inspect(evaled);
+
+        message.channel.send(clean(evaled), {code:"xl"}).catch(err => {
+            message.channel.send("Error: " + err) })
+    } catch (err) {
+        message.channel.send(`\`ERROR\` \`\`\`xl\n${clean(err)}\n\`\`\``);
+        message.react("❌")
+        return; }
+    message.react("✅")
   }
 });
 
