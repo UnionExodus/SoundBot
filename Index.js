@@ -4,6 +4,7 @@ const fs = require('fs')
 const https = require('https');
 
 var bot = new Discord.Client()
+bot.addons = new Discord.Collection();
 
 /* -------------- Functions: -------------- */
 function LoadLogin() {
@@ -32,6 +33,7 @@ bot.on("ready", async function() {
     if (currentgameindex == config.games.length) currentgameindex = 0
   }, config.gamerotateseconds * 1000)
 
+  //Sound reader
   fs.readdir('./Sounds', (err, files) => {
     if(err) console.log('error: ' + err)
 
@@ -44,6 +46,24 @@ bot.on("ready", async function() {
 
     if (config.usewebserver) require("./webserver.js").run(bot, loadedSounds, playFile) //Webserver is enabled? Run it.
    })
+  
+  //Addons reader
+  fs.readdir('./Addons/', (err, files) => {
+    if (err) console.error(err);
+    
+    var jsfiles = files.filter(f => f.split('.').pop() === 'js');
+    jsfiles.splice(jsfiles.indexOf("blank.js"), 1) //remove blank command
+    
+    jsfiles.forEach((f, i) => {
+      if (f == "blank.js") return; //skip blank command
+
+      var addon = require(`./Addons/${f}`);
+      bot.addons.set(addon.config.name, addon);
+    })
+
+    if (jsfiles.length <= 0) return;
+      else console.log("-> " + jsfiles.length + " addon(s) found.")
+  })
 
   setTimeout(() => { console.log("") }, 500)
 })
@@ -82,13 +102,26 @@ bot.on('message', async function(message) {
     break;
 
   case 'join':
-    if(message.member.voice.channel == null) {
-      message.channel.send('please join a Channel first!')
-    return; }
+    if (args[1]) {
+      var requestedchannel = message.guild.channels.cache.find(channel => channel.name == args.slice(1).join(" "))
+      if (requestedchannel != undefined && requestedchannel.type == "voice") {
+        requestedchannel.join().catch(err => {
+          message.channel.send("An error occurred trying to join the voice channel: " + err)
+          console.log("An error occurred trying to join the voice channel: " + err)
+        })
+      } else {
+        return message.channel.send("The requested channel could either not be found or isn't a voice channel.") }
+    } else {
+      var requestedchannel = message.member.voice.channel
+      if(requestedchannel == null) return message.channel.send('Please join a Channel first!');
 
-    message.member.voice.channel.join();
-    console.log(`Joined ${message.member.voice.channel.name} (${message.member.voice.channel.id}).`)
-    message.channel.send("Joined `" + message.member.voice.channel.name + "`.")
+      requestedchannel.join().catch(err => {
+        message.channel.send("An error occurred trying to join the voice channel: " + err)
+        console.log("An error occurred trying to join the voice channel: " + err)
+      }) }
+
+    console.log(`Joined ${requestedchannel.name} (${requestedchannel.id}).`)
+    message.channel.send("Joined `" + requestedchannel.name + "`.")
     break;
 
   case 'leave':
@@ -133,8 +166,8 @@ bot.on('message', async function(message) {
         message.channel.send("Please join a voice channel first!")
         return; } 
       AutoJoin()
-      message.channel.send('Playing Sound: ' + args[2])
-      message.member.guild.voice.connection.play('./Sounds/'+ args[2]+'.mp3')}
+      message.channel.send('Playing Sound: ' + args.slice(2).join(" "))
+      message.member.guild.voice.connection.play('./Sounds/'+ args.slice(2).join(" ") +'.mp3')}
     else message.channel.send('Please use //sound [play/delete/list] [title], \nsend a mp3 with the Comment "//sound dplay" or \nadd a Sound to the Folder')
     break;
 
@@ -155,11 +188,21 @@ bot.on('message', async function(message) {
 
         message.channel.send(clean(evaled), {code:"xl"}).catch(err => {
             message.channel.send("Error: " + err) })
-    } catch (err) {
-        message.channel.send(`\`ERROR\` \`\`\`xl\n${clean(err)}\n\`\`\``);
-        message.react("❌")
-        return; }
-    message.react("✅")
+      } catch (err) {
+          message.channel.send(`\`ERROR\` \`\`\`xl\n${clean(err)}\n\`\`\``);
+          message.react("❌")
+          return; }
+      message.react("✅")
+    break;
+
+    default:
+      var addon = bot.addons.get(args[0].toLowerCase())
+
+      if (addon) { 
+        addon.run(bot, message, args);
+        return;
+      }
+      break;
   }
 });
 
