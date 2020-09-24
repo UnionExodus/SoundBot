@@ -9,9 +9,21 @@
   "author": "UnionExodus",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^12.2.0",
+    "discord.js": "^12.3.1",
     "express": "^4.17.1",
     "ffmpeg": "0.0.4",
     "opusscript": "0.0.7"
-  }
+  },
+  "devDependencies": {
+    "electron": "^10.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UnionExodus/SoundBot.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/UnionExodus/SoundBot/issues"
+  },
+  "homepage": "https://github.com/UnionExodus/SoundBot#readme"
 }

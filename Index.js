@@ -2,6 +2,8 @@ const Discord = require("discord.js")
 const config = require('./config.json')
 const fs = require('fs')
 const https = require('https');
+const { disconnect } = require("process");
+const { connect } = require("http2");
 
 var bot = new Discord.Client()
 bot.addons = new Discord.Collection();
@@ -21,7 +23,6 @@ var playFile = function playFile(sound, channelid) { //exported function that al
 /* -------------- Events: -------------- */
 bot.on("ready", async function() {
   console.log("\nSoundBot launched. Running Version: "+ config.version)
-
   //set it once at startup, then let the Interval do it
   bot.user.setPresence({activity: { name: config.games[0] }, status: 'online' }).catch(err => { return console.log("Woops! Couldn't set presence: " + err); })
 
@@ -73,29 +74,39 @@ bot.on('message', async function(message) {
   if (message.author.bot) return;
   if (!message.content.startsWith(config.prefix)) return;
   var args = message.content.substring(config.prefix.length).split(/\s+/);
-  function AutoJoin() {
-     if (message.member.voice.channel == null) { //Check if the user is in a voice channel
-       message.channel.send("Please join a voice channel first!")
-       return; } 
-     if(!bot.guilds.cache.get(message.guild.id).voice || bot.guilds.cache.get(message.guild.id).voice.channelID == null) message.member.voice.channel.join() }
+  function AutoJoin(callback) {
+    if (message.member.voice.channel == null) { //Check if the user is in a voice channel
+      message.channel.send("Please join a voice channel first!")
+      return; }
 
+    if(!bot.guilds.cache.get(message.guild.id).voice || bot.guilds.cache.get(message.guild.id).voice.channel.id == null) { 
+      message.member.voice.channel.join().then(connection => {
+        return callback(connection) }) //return new connection with callback
+    } else {
+      return callback(message.member.guild.voice.connection) //return existing connection with callback
+    }
+  }
   switch(args[0].toLowerCase()) {
   case 'ping':
     message.channel.send('Pong.');
     break;
 
   case 'stop':
+    if(!bot.guilds.cache.get(message.guild.id).voice.channelID == undefined && bot.guilds.cache.get(message.guild.id).voice && bot.guilds.cache.get(message.guild.id).voice.channelID == null) {message.guild.voice.connection.disconnect();};
+    console.log('Shutting down...');
     message.channel.send('Goodbye!').then(m => {
-    bot.destroy() });
+      bot.destroy();
+    });
     break;
 
   /*case 'restart':
     message.channel.send('Restarting...');
-    bot.destroy();
-    //setTimeout(() => {
-      LoadLogin();
-    //}, 1000);
-    break; */
+    client.destroy();
+    setTimeout(() => {
+     LoadLogin();
+    }, 1000);
+    then(console.log('Bot restarted.')) 
+    break;*/
 
   case 'help':
     message.channel.send(`Bot-Commands:\n${config.prefix}ping\n${config.prefix}stop\n${config.prefix}join\n${config.prefix}leave\n${config.prefix}sound (Type sound for more help)\n${config.prefix}restart (This Command doesn't load new Content`)
@@ -158,19 +169,24 @@ bot.on('message', async function(message) {
       if (message.member.voice.channel == null) { //Check if the user is in a voice channel
         message.channel.send("Please join a voice channel first!")
         return; } 
-      AutoJoin()
+        AutoJoin(function(connection) {
+          connection.play(message.attachments.array()[0]["attachment"])
+        })
       message.channel.send('Playing Sound')
-      message.member.guild.voice.connection.play(message.attachments.array()[0]["attachment"])}
-    else if(args[1] === 'play') {
-      if (message.member.voice.channel == null) { //Check if the user is in a voice channel
-        message.channel.send("Please join a voice channel first!")
-        return; } 
-      AutoJoin()
-      message.channel.send('Playing Sound: ' + args.slice(2).join(" "))
-      message.member.guild.voice.connection.play('./Sounds/'+ args.slice(2).join(" ") +'.mp3')}
-    else message.channel.send('Please use //sound [play/delete/list] [title], \nsend a mp3 with the Comment "//sound dplay" or \nadd a Sound to the Folder')
-    break;
-
+      return; }
+      else if(args[1] === 'play') {
+        if (message.member.voice.channel == null) { //Check if the user is in a voice channel
+          message.channel.send("Please join a voice channel first!")
+          return; }
+        
+        AutoJoin(function(connection) {
+          connection.play('./Sounds/'+ args.slice(2).join(" ") +'.mp3')
+        })
+  
+        message.channel.send('Playing Sound: ' + args.slice(2).join(" "))
+      }
+      else message.channel.send('Please use //sound [play/delete/list] [title], \nsend a mp3 with the Comment "//sound dplay" or \nadd a Sound to the Folder')
+      break;
   case "eval":
     if (!config.owners.includes(message.author.id)) return message.channel.send("You have no permission to use this command.");
   
