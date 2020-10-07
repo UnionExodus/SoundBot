@@ -1,5 +1,3 @@
-const { query } = require("express")
-
 module.exports.run = async (bot, loadedSounds, playFile) => { //export this code so that we can call it by other files
     var config = require("./config.json")
     var express = require("express")
@@ -8,7 +6,15 @@ module.exports.run = async (bot, loadedSounds, playFile) => { //export this code
     var port = 3036
     lastchannel = "" //will rember last selected channel and pre-select it
 
+    var lastvisit = {}
+
     app.get('/', (req, res) => { //listens to main webpage requests (localhost:port)
+        //Log IP of visitor
+        let ip = String(req.headers['x-forwarded-for'] || req.connection.remoteAddress).replace("::ffff:", "")
+
+        if (new Date() - lastvisit[ip] > 150000 || !lastvisit[ip]) console.log("Webserver New Visitor from IP " + ip) //only log if last visit is older than 2.5 minutes (or first time)
+        lastvisit[ip] = new Date()
+
         if (loadedSounds.length == 0) return res.send("No sounds were found.") //No sounds in Sounds folder? Don't display buttons but show this message.
         else {
             /* ------------- Display labels and Channel selector ------------- */
