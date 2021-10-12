@@ -15,7 +15,7 @@
     "opusscript": "0.0.7"
   },
   "devDependencies": {
-    "electron": "^10.1.2"
+    "electron": "^11.5.0"
   },
   "repository": {
     "type": "git",
