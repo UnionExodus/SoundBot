@@ -1,11 +1,14 @@
-const Discord = require("discord.js")
-const fs      = require('fs')
-const https   = require('https');
+const Discord      = require("discord.js")
+const DiscordVoice = require("@discordjs/voice")
+const fs           = require('fs')
+const https        = require('https');
 
-const config  = require('./config.json')
+const config       = require('./config.json')
 
-var bot       = new Discord.Client();
-bot.addons    = new Discord.Collection();
+const bot       = new Discord.Client({ intents: [ Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_VOICE_STATES ] });
+bot.addons      = new Discord.Collection();
+
+const player    = DiscordVoice.createAudioPlayer();
 
 var loadedSounds = []
 
@@ -29,16 +32,12 @@ bot.on("ready", async function() {
     console.log("\nSoundBot launched. Running Version: " + config.version)
 
     //set it once at startup, then let the Interval do it
-    bot.user.setPresence({activity: { name: config.games[0] }, status: 'online' }).catch(err => { 
-        return console.log("Woops! Couldn't set presence: " + err);
-    })
+    bot.user.setPresence({ activities: [{ name: config.games[0] }], status: 'online' })
 
     var currentgameindex = 1
 
     var gamerotationloop = setInterval(() => { //interval has a name to be able to clear it (for what ever reason): clearInterval(gamerotationloop)
-        bot.user.setPresence({activity: { name: config.games[currentgameindex] }, status: 'online' }).catch(err => { 
-            return console.log("Woops! Couldn't set presence: " + err); 
-        })
+        bot.user.setPresence({ activities: [{ name: config.games[currentgameindex] }], status: 'online' })
 
         currentgameindex++
         if (currentgameindex == config.games.length) currentgameindex = 0
@@ -83,7 +82,7 @@ bot.on("ready", async function() {
 })
 
 
-bot.on('message', async function(message) {
+bot.on('messageCreate', (message) => {
     if (message.author.bot) return;
     if (!message.content.startsWith(config.prefix)) return;
 
@@ -95,12 +94,17 @@ bot.on('message', async function(message) {
             return; 
         }
 
-        if(!bot.guilds.cache.get(message.guild.id).voice || bot.guilds.cache.get(message.guild.id).voice.channel.id == null) { 
-            message.member.voice.channel.join().then(connection => {
-                return callback(connection) //return new connection with callback
+        if(!bot.guilds.cache.get(message.guild.id).voice || bot.guilds.cache.get(message.guild.id).me.voice.channel.id == null) {
+            var connection = DiscordVoice.joinVoiceChannel({
+                channelId: message.member.voice.channel.id,
+                guildId: message.guild.id,
+                adapterCreator: message.guild.voiceAdapterCreator
             })
+
+            callback(connection); //return new connection with callback
+
         } else {
-            return callback(message.member.guild.voice.connection) //return existing connection with callback
+            return callback(message.member.guild.me.voice.connection) //return existing connection with callback
         }
     }
 
@@ -111,14 +115,15 @@ bot.on('message', async function(message) {
             break;
 
         case 'stop':
-            if (!bot.guilds.cache.get(message.guild.id).voice.channelID == undefined && bot.guilds.cache.get(message.guild.id).voice && bot.guilds.cache.get(message.guild.id).voice.channelID == null) {
-                message.guild.voice.connection.disconnect();
+            if (bot.guilds.cache.get(message.guild.id).me.voice.channel && bot.guilds.cache.get(message.guild.id).me.voice.channel.id !== null) {
+                message.guild.me.voice.disconnect();
             };
 
             console.log('Shutting down...');
 
             message.channel.send('Goodbye!').then(m => {
                 bot.destroy();
+                process.exit(1);
             });
             break;
 
@@ -145,22 +150,35 @@ bot.on('message', async function(message) {
             if (args[1]) {
                 var requestedchannel = message.guild.channels.cache.find(channel => channel.name == args.slice(1).join(" "))
 
-                if (requestedchannel != undefined && requestedchannel.type == "voice") {
-                    requestedchannel.join().catch(err => {
+                if (requestedchannel != undefined && requestedchannel.type == "GUILD_VOICE") {
+                    try {
+                        DiscordVoice.joinVoiceChannel({
+                            channelId: requestedchannel.id,
+                            guildId: message.guild.id,
+                            adapterCreator: message.guild.voiceAdapterCreator
+                        })
+                    } catch (err) {
                         message.channel.send("An error occurred trying to join the voice channel: " + err)
                         console.log("An error occurred trying to join the voice channel: " + err)
-                    })
+                    }
                 } else {
                     return message.channel.send("The requested channel could either not be found or isn't a voice channel.")
                 }
             } else {
                 var requestedchannel = message.member.voice.channel
+
                 if (requestedchannel == null) return message.channel.send('Please join a Channel first!');
 
-                requestedchannel.join().catch(err => {
+                try {
+                    DiscordVoice.joinVoiceChannel({
+                        channelId: requestedchannel.id,
+                        guildId: message.guild.id,
+                        adapterCreator: message.guild.voiceAdapterCreator
+                    })
+                } catch (err) {
                     message.channel.send("An error occurred trying to join the voice channel: " + err)
                     console.log("An error occurred trying to join the voice channel: " + err)
-                })
+                }
             }
 
             console.log(`Joined ${requestedchannel.name} (${requestedchannel.id}).`)
@@ -168,21 +186,21 @@ bot.on('message', async function(message) {
             break;
 
         case 'leave':
-            if (!bot.guilds.cache.get(message.guild.id).voice || bot.guilds.cache.get(message.guild.id).voice.channelID == null) return message.channel.send('I am not connected to any voice channel!\nIf I am still in a voice channel please wait or disconnect me manually.')
+            if (!bot.guilds.cache.get(message.guild.id).me.voice || bot.guilds.cache.get(message.guild.id).me.voice.channel == null) return message.channel.send('I am not connected to any voice channel!\nIf I am still in a voice channel please wait or disconnect me manually.')
 
-            console.log(`Left ${message.guild.voice.connection.channel.name}.`)
-            message.channel.send("Left `" + message.guild.voice.connection.channel.name + "`.")
+            console.log(`Left ${message.guild.me.voice.channel.name}.`)
+            message.channel.send("Left `" + message.guild.me.voice.channel.name + "`.")
 
-            message.guild.voice.connection.disconnect()
+            message.guild.me.voice.disconnect();
             break;
 
         case 'sound':
             if (args[1] === 'add') {
-                var dest = "./Sounds/"+message.attachments.array()[0]["name"];
+                var dest = "./Sounds/" + [...message.attachments.values()][0]["name"];
 
-                if (loadedSounds.includes(message.attachments.array()[0]["name"].replace(".mp3", ""))) return message.channel.send('Sound does already exist.');
+                if (loadedSounds.includes([...message.attachments.values()][0]["name"].replace(".mp3", ""))) return message.channel.send('Sound does already exist.');
 
-                https.get(message.attachments.array()[0]["attachment"], function(response) {
+                https.get([...message.attachments.values()][0]["attachment"], function(response) {
                     response.pipe(fs.createWriteStream(dest));
 
                     fs.createWriteStream(dest).on('finish', function() {
@@ -193,7 +211,7 @@ bot.on('message', async function(message) {
                 }) 
 
                 message.channel.send('Adding Sound to the Board'); 
-                loadedSounds.push(message.attachments.array()[0]["name"].replace(".mp3", ""));
+                loadedSounds.push([...message.attachments.values()][0]["name"].replace(".mp3", ""));
 
             } else if(args[1] === 'delete') {
                 if (!fs.existsSync("./Sounds/" + args[2] + '.mp3')) return message.channel.send('Sound doesn´t exist.');
@@ -203,7 +221,8 @@ bot.on('message', async function(message) {
                 message.channel.send('Sound has been deleted.');
 
             } else if(args[1] === 'list') {
-                message.channel.send(loadedSounds);
+                if (loadedSounds.length == 0) message.channel.send("No sounds found!")
+                    else message.channel.send(loadedSounds.join("\n"));
 
             } else if(args[1] === 'dplay') {
                 if (message.member.voice.channel == null) { //Check if the user is in a voice channel
@@ -212,10 +231,23 @@ bot.on('message', async function(message) {
                 } 
 
                 autoJoin((connection) => {
-                    connection.play(message.attachments.array()[0]["attachment"])
+                    try {
+                        connection.subscribe(player);
+                  
+                        const resource = DiscordVoice.createAudioResource([...message.attachments.values()][0]["attachment"], {
+                            inputType: DiscordVoice.StreamType.Arbitrary
+                        });
+                  
+                        player.play(resource);
+
+                    } catch (err) {
+                        console.log("Error trying to play sound: " + err);
+                        message.channel.send("Error trying to play sound: " + err);
+                        return;
+                    }
                 })
 
-                message.channel.send('Playing Sound')
+                message.channel.send('Playing Sound...')
                 return;
 
             } else if(args[1] === 'play') {
@@ -225,7 +257,20 @@ bot.on('message', async function(message) {
                 }
                 
                 autoJoin((connection) => {
-                    connection.play('./Sounds/'+ args.slice(2).join(" ") +'.mp3')
+                    try {
+                        connection.subscribe(player);
+                  
+                        const resource = DiscordVoice.createAudioResource('./Sounds/'+ args.slice(2).join(" ") +'.mp3', {
+                            inputType: DiscordVoice.StreamType.Arbitrary
+                        });
+                  
+                        player.play(resource);
+
+                    } catch (err) {
+                        console.log("Error trying to play sound: " + err);
+                        message.channel.send("Error trying to play sound: " + err);
+                        return;
+                    }
                 })
 
                 message.channel.send('Playing Sound: ' + args.slice(2).join(" "))

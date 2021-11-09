@@ -9,13 +9,15 @@
   "author": "UnionExodus",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^12.3.1",
+    "@discordjs/voice": "^0.7.2",
+    "discord.js": "^13.3.1",
     "express": "^4.17.1",
-    "ffmpeg": "0.0.4",
-    "opusscript": "0.0.7"
+    "ffmpeg-static": "^4.4.0",
+    "opusscript": "0.0.8",
+    "sodium": "^3.0.2"
   },
   "devDependencies": {
-    "electron": "^10.1.2"
+    "electron": "^15.3.0"
   },
   "repository": {
     "type": "git",
