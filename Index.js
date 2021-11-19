@@ -94,7 +94,7 @@ bot.on('messageCreate', (message) => {
             return; 
         }
 
-        if(!bot.guilds.cache.get(message.guild.id).voice || bot.guilds.cache.get(message.guild.id).me.voice.channel.id == null) {
+        if(!bot.guilds.cache.get(message.guild.id).me.voice || bot.guilds.cache.get(message.guild.id).me.voice.channel.id == null) {
             var connection = DiscordVoice.joinVoiceChannel({
                 channelId: message.member.voice.channel.id,
                 guildId: message.guild.id,
