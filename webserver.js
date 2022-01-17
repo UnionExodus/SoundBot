@@ -1,4 +1,4 @@
-module.exports.run = async (bot, loadedSounds, playFile) => { //export this code so that we can call it by other files
+module.exports.run = async (bot, playFile) => { //export this code so that we can call it by other files
     var config = require("./config.json")
     var express = require("express")
     var app = express()
@@ -15,7 +15,7 @@ module.exports.run = async (bot, loadedSounds, playFile) => { //export this code
         if (new Date() - lastvisit[ip] > 150000 || !lastvisit[ip]) console.log("Webserver New Visitor from IP " + ip) //only log if last visit is older than 2.5 minutes (or first time)
         lastvisit[ip] = new Date()
 
-        if (loadedSounds.length == 0) return res.send("No sounds were found.") //No sounds in Sounds folder? Don't display buttons but show this message.
+        if (bot.loadedSounds.length == 0) return res.send("No sounds were found.") //No sounds in Sounds folder? Don't display buttons but show this message.
         else {
             /* ------------- Display labels and Channel selector ------------- */
             res.write(`
@@ -44,9 +44,9 @@ module.exports.run = async (bot, loadedSounds, playFile) => { //export this code
             `)
 
             /* ------------- Display buttons for each sound ------------- */
-            loadedSounds.forEach((e, i) => { //get loadedSounds Array that was passed when running this exported code and run an iteration for each element in it
+            bot.loadedSounds.forEach((e, i) => { //get loadedSounds Array that was passed when running this exported code and run an iteration for each element in it
                 res.write(`<button name="sound" id="${i}" value="${i}">${e}</button>`) //Display a button that redirects the user with query parameters with the text of our array's element (sound name)
-                if (i + 1 == loadedSounds.length) { //check if this iteration is the last iteration
+                if (i + 1 == bot.loadedSounds.length) { //check if this iteration is the last iteration
                     res.write(`
                                 </form>
                             </div2>
