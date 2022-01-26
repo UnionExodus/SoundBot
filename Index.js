@@ -57,14 +57,29 @@ bot.on("ready", async function() {
     })
 
     //bot_modules reader
-    /*
-    Commands.json laden
-    einzelne Keys lesen: Object.keys(commands) for each
-    collection erstellen für command zu datei und subcommands parameter
-    subcommands checken (existenz) und deren keys lesen und zu subcommands parameter hinzufügen
+    const commandsFile = require("./bot_modules/commands.json");
 
-    message event muss argument 1 checken und schauen, ob dies ein subcommand ist true: subcommand false: run
-     */
+    if (Object.keys(commandsFile).length == 0) console.log("Warning: No commands found in commands.json!");
+
+    Object.keys(commandsFile).forEach((e) => {
+        var cmd = require(`./bot_modules/${e}`);
+
+        for (let j = 0; j < commandsFile[e].alias.length; j++) { //get all aliases of this command
+            var subcommandsRegister = {};
+
+            //Add subcommands aswell for each alias if this command has at least one
+            if (commandsFile[e].subcommands) {
+                Object.keys(commandsFile[e].subcommands).forEach((f) => {
+                    commandsFile[e].subcommands[f].alias.forEach((g) => {
+                        subcommandsRegister[g] = cmd[f];
+                    })
+                })
+            }
+
+            bot.bot_modules.set(commandsFile[e].alias[j], { run: cmd.run, subcommands: subcommandsRegister })
+        }
+    })
+
 
     //Addons reader
     fs.readdir('./Addons/', (err, files) => {
@@ -94,20 +109,15 @@ bot.on('messageCreate', (message) => {
     if (!message.content.startsWith(config.prefix)) return;
 
     var args = message.content.substring(config.prefix.length).split(/\s+/);
+    var cmd  = bot.bot_modules.get(args[0]);
 
-    //Commands
-
-    for(i = 1; commands.length; i++) {
-
-        if(args[0].toLowerCase() == commands[i]) {console.log("funzt")} else
-
-            for(f = 1; commands[i].length; i++){
-
-                if(args[0].toLowerCase() == commands[i].alias[f]) console.log("yeee");
-
-            }
+    if (cmd) {
+        if (cmd.subcommands && cmd.subcommands[args[1]]) {
+            cmd.subcommands[args[1]](bot, message, args);
+        } else {
+            cmd.run(bot, message, args);
+        }
     }
-
 });
 
 module.exports={
