@@ -5,39 +5,40 @@
     },
     "join": {
         "description": "let the bot join [your/the told] channel",
-        "alias":  ["j", "connect"]
+        "alias":  ["join", "j", "connect"]
     },
     "leave": {
         "description": "bot leaves your channel",
-        "alias":  ["quit", "q", "l"]
+        "alias":  ["leave", "quit", "q", "l"]
     },
     "sound": {
         "description": "Sound control commands\n Use:\nsend a sound with the command dplay or add [Title (optional)]",
+        "alias": ["sound"],
         "subcommands": {
             "play": {
                 "description": "Plays a sound",
-                "alias": ["p"]
+                "alias": ["play", "p"]
             },
             "dplay": {
                 "description": "Directly plays your sound",
-                "alias": ["d"]
+                "alias": ["dplay", "d"]
             },
             "delete": {
                 "description": "Delete sound from the board",
-                "alias": ["r", "rm", "del"]
+                "alias": ["delete", "r", "rm", "del"]
             },
             "list": {
                 "description": "List your sounds",
-                "alias": ["l"]
+                "alias": ["list", "l"]
             },
             "add": {
                 "description": "Add sound to the board",
-                "alias": ["a"]
+                "alias": ["add", "a"]
             }
         }
     },
     "stop": {
         "description": "Stop the bot.",
-        "alias": []
+        "alias": ["stop"]
     }
 }
