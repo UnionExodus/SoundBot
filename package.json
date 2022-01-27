@@ -1,6 +1,6 @@
 {
   "name": "soundbot",
-  "version": "1.0.0",
+  "version": "0.8.0",
   "description": "Discord Soundboard Bot",
   "main": "index.js",
   "scripts": {
@@ -14,6 +14,7 @@
     "express": "^4.17.2",
     "ffmpeg-static": "^4.4.1",
     "opusscript": "0.0.8",
+    "output-logger": "^2.0.0",
     "sodium": "^3.0.2"
   },
   "devDependencies": {

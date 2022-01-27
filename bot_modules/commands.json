@@ -12,7 +12,7 @@
         "alias":  ["leave", "quit", "q", "l"]
     },
     "sound": {
-        "description": "Sound control commands\n Use:\nsend a sound with the command dplay or add [Title (optional)]",
+        "description": "Sound control commands. Use //sound [subcommand]:",
         "alias": ["sound"],
         "subcommands": {
             "play": {

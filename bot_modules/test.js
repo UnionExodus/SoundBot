@@ -1,3 +1,5 @@
+const logger       = require('output-logger')
+
 module.exports.run = async (bot, message, args) => {
-    console.log("test.js loaded.");
+    logger('info', "test.js loaded.");
 }

@@ -1,8 +1,9 @@
-const https = require("https");
-const fs = require("fs");
-const Discord = require("discord.js");
-const DiscordVoice = require("@discordjs/voice");
-const player    = DiscordVoice.createAudioPlayer();
+const https = require("https")
+const fs = require("fs")
+const Discord = require("discord.js")
+const DiscordVoice = require("@discordjs/voice")
+const player    = DiscordVoice.createAudioPlayer()
+const logger       = require('output-logger')
 
 /**
  * Handle if bot is not in voice channel
@@ -64,7 +65,7 @@ module.exports.play = (bot, message, args) => {
             message.channel.send('Playing Sound: ' + args.slice(2).join(" "))
 
         } catch (err) {
-            console.log("Error trying to play sound: " + err);
+            logger('info', "Error trying to play sound: " + err);
             message.channel.send("Error trying to play sound: " + err);
             return;
         }
@@ -88,10 +89,10 @@ module.exports.add = (bot, message, args) => {
         response.pipe(fs.createWriteStream(dest));
 
         fs.createWriteStream(dest).on('finish', function() {
-            console.log("File download completed.")
+            logger('info', "File download completed.")
         });
     }).on('error', function(err) {
-        console.log("An error occurred downloading the file: " + err)
+        logger('error', "An error occurred downloading the file: " + err)
     })
 
     message.channel.send('Adding Sound to the Board');
@@ -138,7 +139,7 @@ module.exports.dplay = (bot, message, args) => {
             player.play(resource);
 
         } catch (err) {
-            console.log("Error trying to play sound: " + err);
+            logger('error', "Error trying to play sound: " + err);
             message.channel.send("Error trying to play sound: " + err);
             return;
         }

@@ -1,7 +1,8 @@
 const Discord      = require("discord.js")
 const DiscordVoice = require("@discordjs/voice")
 const fs           = require('fs')
-const https        = require('https');
+const https        = require('https')
+const logger       = require('output-logger')
 
 const commands     = require('./bot_modules/commands.json')
 const config       = require('./config.json')
@@ -11,8 +12,17 @@ bot.addons      = new Discord.Collection();
 bot.bot_modules = new Discord.Collection();
 bot.loadedSounds = [];
 
+/* ----------- configure logger: ---------- */
+
+logger.options({
+    msgstructure: `${logger.Const.TYPE} [${logger.Const.DATE}] ${logger.Const.MESSAGE}`,
+    paramstructure: [logger.Const.TYPE, logger.Const.MESSAGE, "nodate", "remove"]
+})
+
+
 
 /* -------------- Functions: -------------- */
+
 function loadLogin() {
     if (config.token == '') bot.login(require("../token.json").token); 
         else bot.login(config.token) 
@@ -28,7 +38,8 @@ var playFile = function playFile(sound, channelid) { //exported function that al
 
 /* -------------- Events: -------------- */
 bot.on("ready", async function() {
-    console.log("\nSoundBot launched. Running Version: " + config.version)
+    logger('','', true)
+    logger('info',"SoundBot launched. Running Version: " + config.version)
 
     //set it once at startup, then let the Interval do it
     bot.user.setPresence({ activities: [{ name: config.games[0] }], status: 'online' })
@@ -44,14 +55,14 @@ bot.on("ready", async function() {
 
     //Sound reader
     fs.readdir('./Sounds', (err, files) => {
-        if (err) console.log('error: ' + err)
+        if (err) logger('error', 'An error occurred while trying to read the sound directory: ' + err)
 
         bot.loadedSounds = files.filter(f => f.split('.').pop() === 'mp3')
         bot.loadedSounds.forEach((e, i) => {
             bot.loadedSounds[i] = e.replace(".mp3", "")
         })
 
-        console.log(bot.loadedSounds.length + ' Sound(s) loaded.')
+        logger('info', bot.loadedSounds.length + ' Sound(s) loaded.')
 
         if (config.usewebserver) require("./webserver.js").run(bot, playFile) //Webserver is enabled? Run it.
     })
@@ -59,7 +70,7 @@ bot.on("ready", async function() {
     //bot_modules reader
     const commandsFile = require("./bot_modules/commands.json");
 
-    if (Object.keys(commandsFile).length == 0) console.log("Warning: No commands found in commands.json!");
+    if (Object.keys(commandsFile).length == 0) logger('warning', 'No commands found in commands.json!');
 
     Object.keys(commandsFile).forEach((e) => {
         var cmd = require(`./bot_modules/${e}`);
@@ -94,12 +105,12 @@ bot.on("ready", async function() {
         })
 
         if (jsfiles.length <= 0) return;
-            else console.log("-> " + jsfiles.length + " addon(s) found.")
+            else console.log('info', jsfiles.length + " addon(s) found.")
     })
 
 
     setTimeout(() => { 
-        console.log("");
+        logger('', '', true);
     }, 500)
 })
 

@@ -2,7 +2,7 @@
     "version": "0.7",
     "prefix": "//",
     "token": "",
-    "usewebserver": true,
+    "usewebserver": false,
     "games": ["//help | SoundBot", "UnionExodus & 3urobeat", "Play sounds and annoy your friends", "AFK, on the toilet", "Deleting all your sounds...", "Watching cat videos on Reddit", "the sun is a deadly lazer", "Jamming to your sounds"],
     "gamerotateseconds": 30,
     "owners": ["232596482375548929", "231827708198256642"]

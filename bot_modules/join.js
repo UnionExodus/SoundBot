@@ -1,4 +1,5 @@
-const DiscordVoice = require("@discordjs/voice");
+const DiscordVoice = require("@discordjs/voice")
+const logger       = require('output-logger')
 module.exports.run = async (bot, message, args) => {
     if (args[1]) {
         var requestedchannel = message.guild.channels.cache.find(channel => channel.name == args.slice(1).join(" "))
@@ -12,7 +13,7 @@ module.exports.run = async (bot, message, args) => {
                 })
             } catch (err) {
                 message.channel.send("An error occurred trying to join the voice channel: " + err)
-                console.log("An error occurred trying to join the voice channel: " + err)
+                logger('error', "An error occurred trying to join the voice channel: " + err)
             }
         } else {
             return message.channel.send("The requested channel could either not be found or isn't a voice channel.")
@@ -30,7 +31,7 @@ module.exports.run = async (bot, message, args) => {
             })
         } catch (err) {
             message.channel.send("An error occurred trying to join the voice channel: " + err)
-            console.log("An error occurred trying to join the voice channel: " + err)
+            logger('error', "An error occurred trying to join the voice channel: " + err)
         }
     }
 
